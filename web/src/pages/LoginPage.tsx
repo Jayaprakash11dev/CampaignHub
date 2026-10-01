@@ -24,6 +24,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [slow, setSlow] = useState(false)
 
   // Where to go after logging in (set by RequireAuth).
   const from = (location.state as { from?: string } | null)?.from ?? '/'
@@ -36,12 +37,16 @@ export function LoginPage() {
     event.preventDefault()
     setError(null)
     setSubmitting(true)
+    // The hosted API sleeps when idle (free plan); if login is slow, say why.
+    const slowTimer = window.setTimeout(() => setSlow(true), 4000)
     try {
       await login(email.trim(), password)
       navigate(from, { replace: true })
     } catch (err) {
       setError(getApiError(err).message)
     } finally {
+      window.clearTimeout(slowTimer)
+      setSlow(false)
       setSubmitting(false)
     }
   }
@@ -101,6 +106,11 @@ export function LoginPage() {
           >
             {submitting ? 'Logging in…' : 'Log in'}
           </button>
+          {slow && (
+            <p role="status" className="text-center text-xs text-slate-500">
+              The server is waking up (free hosting sleeps when idle). This can take up to a minute…
+            </p>
+          )}
         </form>
 
         <div className="mt-4 text-center">

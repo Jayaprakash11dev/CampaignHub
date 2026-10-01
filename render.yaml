@@ -1,0 +1,27 @@
+# Render Blueprint for the API (https://render.com/docs/blueprint-spec).
+# Render -> New -> Blueprint -> pick this repo. You'll be asked for the values
+# marked "sync: false" (DATABASE_URL from Neon, CORS_ORIGIN = the Vercel URL).
+services:
+  - type: web
+    name: campaignhub-api
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: api
+    # Dev dependencies are needed to build (Nest CLI) and to run migrations
+    # (Prisma CLI), so install them explicitly.
+    buildCommand: npm ci --include=dev && npm run build
+    # Migrations are idempotent, so they run on every start.
+    startCommand: npx prisma migrate deploy && node dist/main
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: CORS_ORIGIN
+        sync: false

@@ -63,6 +63,11 @@ describe('Authentication (e2e)', () => {
     expect(res.body.code).toBe('VALIDATION_FAILED');
   });
 
+  it('exposes a public health check that also checks the database', async () => {
+    const res = await request(server()).get('/api/health').expect(200);
+    expect(res.body).toEqual({ status: 'ok', database: 'up' });
+  });
+
   it('requires a token on protected routes', async () => {
     await request(server()).get('/api/posts').expect(401);
     await request(server())

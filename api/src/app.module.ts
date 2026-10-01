@@ -8,6 +8,7 @@ import { RolesGuard } from './auth/roles.guard';
 import { ClientsModule } from './clients/clients.module';
 import { CommentsModule } from './comments/comments.module';
 import { HttpExceptionFilter } from './common/http-exception.filter';
+import { HealthModule } from './health/health.module';
 import { PostsModule } from './posts/posts.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     PostsModule,
     CommentsModule,
     SchedulerModule,
+    HealthModule,
   ],
   providers: [
     // Order matters: authenticate first, then check the role.
