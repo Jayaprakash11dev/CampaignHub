@@ -236,3 +236,36 @@ describe('PostsService.transition', () => {
     expect(prisma.post.updateMany).not.toHaveBeenCalled();
   });
 });
+
+describe('PostsService.findAll', () => {
+  it('filters by scheduled time range and keeps the reviewer scope', async () => {
+    const prisma = createPrismaMock();
+    const service = new PostsService(prisma as unknown as PrismaService);
+    const reviewer: AuthUser = {
+      id: 7,
+      name: 'Riya',
+      email: 'riya@test.com',
+      role: Role.REVIEWER,
+    };
+    prisma.post.findMany.mockResolvedValue([]);
+
+    await service.findAll(reviewer, {
+      clientId: 3,
+      from: '2026-09-27T18:30:00.000Z',
+      to: '2026-10-04T18:30:00.000Z',
+    });
+
+    expect(prisma.post.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          client: { reviewers: { some: { id: 7 } } },
+          clientId: 3,
+          scheduledAt: {
+            gte: new Date('2026-09-27T18:30:00.000Z'),
+            lt: new Date('2026-10-04T18:30:00.000Z'),
+          },
+        }) as unknown,
+      }),
+    );
+  });
+});

@@ -17,15 +17,19 @@ import type {
 export interface PostFilters {
   clientId?: number
   platform?: Platform
+  // UTC ISO strings: posts scheduled from `from` (inclusive) to `to` (exclusive)
+  from?: string
+  to?: string
 }
 
-export function usePosts(filters: PostFilters) {
+export function usePosts(filters: PostFilters, options = { enabled: true }) {
   return useQuery({
     queryKey: ['posts', filters],
     queryFn: async () => {
       const { data } = await api.get<Post[]>('/posts', { params: filters })
       return data
     },
+    enabled: options.enabled,
   })
 }
 

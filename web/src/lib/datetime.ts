@@ -31,4 +31,35 @@ export function nowIstInput(): string {
   return dayjs().tz(IST).format(INPUT_FORMAT)
 }
 
+// --- Calendar helpers. Dates are plain 'YYYY-MM-DD' strings for days in
+// India, so a week never shifts because of the browser's own timezone. ---
+
+const DATE_FORMAT = 'YYYY-MM-DD'
+
+// Monday of the IST week containing `iso` (default: now).
+export function istWeekStart(iso?: string): string {
+  const day = (iso ? dayjs(iso) : dayjs()).tz(IST)
+  const daysSinceMonday = (day.day() + 6) % 7 // day(): 0 = Sunday
+  return addDays(day.format(DATE_FORMAT), -daysSinceMonday)
+}
+
+export function addDays(date: string, days: number): string {
+  return dayjs(date).add(days, 'day').format(DATE_FORMAT)
+}
+
+// Midnight IST at the start of `date`, as a UTC ISO string for the API.
+export function istDayStartUtc(date: string): string {
+  return dayjs.tz(date, IST).toISOString()
+}
+
+// Today's date in India.
+export function istToday(): string {
+  return dayjs().tz(IST).format(DATE_FORMAT)
+}
+
+// The IST calendar date a UTC timestamp falls on.
+export function istDate(iso: string): string {
+  return formatIst(iso, DATE_FORMAT)
+}
+
 export { dayjs }

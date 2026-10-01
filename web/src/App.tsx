@@ -4,7 +4,7 @@ import { Layout } from './components/Layout'
 import { ClientsPage } from './pages/admin/ClientsPage'
 import { UsersPage } from './pages/admin/UsersPage'
 import { BoardPage } from './pages/BoardPage'
-import { ComingSoon } from './pages/ComingSoon'
+import { CalendarPage } from './pages/CalendarPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PostDetailPage } from './pages/PostDetailPage'
@@ -24,7 +24,7 @@ export default function App() {
         }
       >
         <Route index element={<BoardPage />} />
-        <Route path="calendar" element={<ComingSoon title="Calendar" />} />
+        <Route path="calendar" element={<CalendarPage />} />
         <Route
           path="posts/new"
           element={

@@ -39,6 +39,10 @@ export class PostsService {
         clientId: query.clientId,
         platform: query.platform,
         status: query.status,
+        scheduledAt: {
+          gte: query.from ? new Date(query.from) : undefined,
+          lt: query.to ? new Date(query.to) : undefined,
+        },
       },
       include: postInclude,
       orderBy: { scheduledAt: 'asc' },
