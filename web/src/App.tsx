@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router'
 import { RequireAuth } from './auth/RequireAuth'
 import { Layout } from './components/Layout'
+import { BoardPage } from './pages/BoardPage'
 import { ComingSoon } from './pages/ComingSoon'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -18,7 +19,7 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<ComingSoon title="Board" />} />
+        <Route index element={<BoardPage />} />
         <Route path="calendar" element={<ComingSoon title="Calendar" />} />
         <Route
           path="posts/new"
