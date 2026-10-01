@@ -5,6 +5,7 @@ import { BoardPage } from './pages/BoardPage'
 import { ComingSoon } from './pages/ComingSoon'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { PostDetailPage } from './pages/PostDetailPage'
 import { PostEditorPage } from './pages/PostEditorPage'
 
 export default function App() {
@@ -30,7 +31,7 @@ export default function App() {
             </RequireAuth>
           }
         />
-        <Route path="posts/:id" element={<ComingSoon title="Post details" />} />
+        <Route path="posts/:id" element={<PostDetailPage />} />
         <Route
           path="posts/:id/edit"
           element={

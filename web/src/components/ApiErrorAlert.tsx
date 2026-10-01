@@ -8,7 +8,8 @@ export function ApiErrorAlert({
   onReload,
 }: {
   error: unknown
-  // Called by the "Load latest version" button on VERSION_MISMATCH.
+  // Called by the "Load latest version" button (VERSION_MISMATCH and
+  // INVALID_TRANSITION).
   onReload?: () => void
 }) {
   const apiError = getApiError(error)
@@ -34,7 +35,11 @@ export function ApiErrorAlert({
         </p>
       )}
 
-      {apiError.code === 'VERSION_MISMATCH' && onReload && (
+      {/* Both usually mean the page is out of date: someone else edited
+          or moved the post since it was loaded. */}
+      {(apiError.code === 'VERSION_MISMATCH' ||
+        apiError.code === 'INVALID_TRANSITION') &&
+        onReload && (
         <button
           type="button"
           onClick={onReload}

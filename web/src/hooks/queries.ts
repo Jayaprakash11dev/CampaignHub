@@ -1,6 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
-import type { Client, Platform, Post } from '../lib/types'
+import type {
+  AuditEntry,
+  Client,
+  Comment,
+  Platform,
+  Post,
+} from '../lib/types'
 
 // All server data goes through TanStack Query: it caches by key, so other
 // pages can refresh the board after a change with
@@ -29,6 +35,26 @@ export function usePost(id: number | undefined) {
       return data
     },
     enabled: id !== undefined,
+  })
+}
+
+export function useComments(postId: number) {
+  return useQuery({
+    queryKey: ['comments', postId],
+    queryFn: async () => {
+      const { data } = await api.get<Comment[]>(`/posts/${postId}/comments`)
+      return data
+    },
+  })
+}
+
+export function useAuditLog(postId: number) {
+  return useQuery({
+    queryKey: ['audit', postId],
+    queryFn: async () => {
+      const { data } = await api.get<AuditEntry[]>(`/posts/${postId}/audit`)
+      return data
+    },
   })
 }
 
