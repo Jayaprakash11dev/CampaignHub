@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   ParseIntPipe,
   Patch,
@@ -14,6 +15,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { ListPostsQuery } from './dto/list-posts.query';
+import { TransitionPostDto } from './dto/transition-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
 
@@ -31,7 +33,7 @@ export class PostsController {
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.postsService.findOne(id, user);
+    return this.postsService.getPost(id, user);
   }
 
   @Post()
@@ -48,5 +50,18 @@ export class PostsController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.postsService.update(id, dto, user);
+  }
+
+  // One endpoint for every status change (submit, approve, request
+  // changes, schedule). No @Roles here: who may make which change depends
+  // on the target status, so post-policy.ts decides.
+  @Post(':id/transitions')
+  @HttpCode(200)
+  transition(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: TransitionPostDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.postsService.transition(id, dto, user);
   }
 }

@@ -1,4 +1,8 @@
-import { ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Platform, PostStatus, Role } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user';
 import { PrismaService } from '../prisma/prisma.service';
@@ -34,7 +38,9 @@ function createPrismaMock() {
       updateMany: jest.fn(),
       findUniqueOrThrow: jest.fn(),
     },
-    client: { findUnique: jest.fn() },
+    client: { findUnique: jest.fn(), count: jest.fn() },
+    auditLog: { create: jest.fn() },
+    comment: { create: jest.fn() },
     $executeRaw: jest.fn(),
     $transaction: jest.fn(),
   };
@@ -127,5 +133,106 @@ describe('PostsService.update (optimistic locking)', () => {
 
     expect(prisma.$executeRaw).not.toHaveBeenCalled();
     expect(prisma.post.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('PostsService.transition', () => {
+  const reviewer: AuthUser = {
+    id: 2,
+    name: 'Riya',
+    email: 'riya@test.com',
+    role: Role.REVIEWER,
+  };
+
+  let prisma: ReturnType<typeof createPrismaMock>;
+  let service: PostsService;
+
+  beforeEach(() => {
+    prisma = createPrismaMock();
+    service = new PostsService(prisma as unknown as PrismaService);
+
+    const inReview = { ...existingPost(4), status: PostStatus.IN_REVIEW };
+    prisma.post.findFirst.mockResolvedValue(inReview);
+    prisma.client.count.mockResolvedValue(1); // reviewer is assigned
+  });
+
+  it('rejects a change request with a short comment and writes nothing', async () => {
+    await expect(
+      service.transition(
+        10,
+        { toStatus: PostStatus.CHANGES_REQUESTED, version: 4, comment: 'Meh' },
+        reviewer,
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(prisma.post.updateMany).not.toHaveBeenCalled();
+    expect(prisma.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it('saves the status change, an audit entry and the comment together', async () => {
+    prisma.post.updateMany.mockResolvedValue({ count: 1 });
+    prisma.post.findUniqueOrThrow.mockResolvedValue({
+      ...existingPost(5),
+      status: PostStatus.CHANGES_REQUESTED,
+    });
+
+    await service.transition(
+      10,
+      {
+        toStatus: PostStatus.CHANGES_REQUESTED,
+        version: 4,
+        comment: '  Please shorten the second line  ',
+      },
+      reviewer,
+    );
+
+    expect(prisma.post.updateMany).toHaveBeenCalledWith({
+      where: { id: 10, version: 4, status: PostStatus.IN_REVIEW },
+      data: {
+        status: PostStatus.CHANGES_REQUESTED,
+        version: { increment: 1 },
+      },
+    });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        postId: 10,
+        actorId: reviewer.id,
+        fromStatus: PostStatus.IN_REVIEW,
+        toStatus: PostStatus.CHANGES_REQUESTED,
+      },
+    });
+    expect(prisma.comment.create).toHaveBeenCalledWith({
+      data: {
+        postId: 10,
+        authorId: reviewer.id,
+        message: 'Please shorten the second line',
+      },
+    });
+  });
+
+  it('rejects an invalid workflow step with 400 before checking permissions', async () => {
+    await expect(
+      service.transition(
+        10,
+        { toStatus: PostStatus.DRAFT, version: 4 },
+        reviewer,
+      ),
+    ).rejects.toMatchObject({
+      response: { code: 'INVALID_TRANSITION' },
+    });
+    expect(prisma.client.count).not.toHaveBeenCalled();
+  });
+
+  it('blocks a reviewer who is not assigned to the client with 403', async () => {
+    prisma.client.count.mockResolvedValue(0);
+
+    await expect(
+      service.transition(
+        10,
+        { toStatus: PostStatus.APPROVED, version: 4 },
+        reviewer,
+      ),
+    ).rejects.toThrow(ForbiddenException);
+    expect(prisma.post.updateMany).not.toHaveBeenCalled();
   });
 });

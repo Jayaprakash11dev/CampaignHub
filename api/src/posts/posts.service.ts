@@ -5,9 +5,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { assertCaptionFits } from './caption-limits';
 import { CreatePostDto } from './dto/create-post.dto';
 import { ListPostsQuery } from './dto/list-posts.query';
+import { TransitionPostDto } from './dto/transition-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { versionMismatchError } from './post-errors';
-import { assertCanEdit } from './post-policy';
+import {
+  allowedTransitionsFor,
+  assertCanEdit,
+  assertCanTransition,
+  assertChangeRequestComment,
+} from './post-policy';
+import { assertTransition } from './post-workflow';
 import {
   assertInFuture,
   conflictWindow,
@@ -47,6 +54,13 @@ export class PostsService {
       throw new NotFoundException(`Post ${id} not found`);
     }
     return post;
+  }
+
+  // Single post for the detail page, plus the status changes this user is
+  // allowed to make right now (the UI shows one button per entry).
+  async getPost(id: number, user: AuthUser) {
+    const post = await this.findOne(id, user);
+    return this.withAllowedTransitions(post, user);
   }
 
   async create(dto: CreatePostDto, user: AuthUser) {
@@ -123,7 +137,7 @@ export class PostsService {
       assertInFuture(next.scheduledAt);
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       if (slotChanged) {
         await this.lockSlot(tx, next.clientId, next.platform);
         await this.assertNoConflict(tx, { ...next, id });
@@ -147,6 +161,106 @@ export class PostsService {
         include: postInclude,
       });
     });
+
+    return this.withAllowedTransitions(updated, user);
+  }
+
+  // Moves a post to a new status. The checks run in a fixed order:
+  //   1. can the user see the post at all?            → 404
+  //   2. is from → to a valid workflow step?          → 400
+  //   3. is this user allowed to make that step?      → 403
+  //   4. is the client's copy of the post up to date? → 409
+  //   5. rule for the step (comment / schedule slot)  → 400 / 409
+  // Then the status change, audit log entry and optional comment are saved
+  // in one transaction, so they either all happen or none do.
+  async transition(id: number, dto: TransitionPostDto, user: AuthUser) {
+    const post = await this.findOne(id, user);
+    const from = post.status;
+    const to = dto.toStatus;
+
+    assertTransition(from, to);
+
+    const isAssignedReviewer = await this.isAssignedReviewer(
+      user,
+      post.clientId,
+    );
+    assertCanTransition(user, post, to, isAssignedReviewer);
+
+    if (dto.version !== post.version) {
+      throw versionMismatchError(post.version);
+    }
+
+    if (to === PostStatus.CHANGES_REQUESTED) {
+      assertChangeRequestComment(dto.comment);
+    }
+    if (to === PostStatus.SCHEDULED) {
+      // The time was valid when the post was written, but it may have
+      // passed while the post was waiting for review.
+      assertInFuture(post.scheduledAt);
+    }
+
+    const comment = dto.comment?.trim();
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      if (to === PostStatus.SCHEDULED) {
+        await this.lockSlot(tx, post.clientId, post.platform);
+        await this.assertNoConflict(tx, post);
+      }
+
+      // `status: from` guards against the post having moved on since we
+      // read it, on top of the version check.
+      const { count } = await tx.post.updateMany({
+        where: { id, version: dto.version, status: from },
+        data: { status: to, version: { increment: 1 } },
+      });
+      if (count === 0) {
+        const current = await tx.post.findUniqueOrThrow({
+          where: { id },
+          select: { version: true },
+        });
+        throw versionMismatchError(current.version);
+      }
+
+      await tx.auditLog.create({
+        data: { postId: id, actorId: user.id, fromStatus: from, toStatus: to },
+      });
+
+      if (comment) {
+        await tx.comment.create({
+          data: { postId: id, authorId: user.id, message: comment },
+        });
+      }
+
+      return tx.post.findUniqueOrThrow({
+        where: { id },
+        include: postInclude,
+      });
+    });
+
+    return this.withAllowedTransitions(updated, user);
+  }
+
+  private async withAllowedTransitions<
+    T extends { clientId: number; createdById: number; status: PostStatus },
+  >(post: T, user: AuthUser) {
+    const isAssignedReviewer = await this.isAssignedReviewer(
+      user,
+      post.clientId,
+    );
+    return {
+      ...post,
+      allowedTransitions: allowedTransitionsFor(user, post, isAssignedReviewer),
+    };
+  }
+
+  private async isAssignedReviewer(user: AuthUser, clientId: number) {
+    if (user.role !== Role.REVIEWER) {
+      return false;
+    }
+    const count = await this.prisma.client.count({
+      where: { id: clientId, reviewers: { some: { id: user.id } } },
+    });
+    return count > 0;
   }
 
   private async assertClientExists(clientId: number) {
