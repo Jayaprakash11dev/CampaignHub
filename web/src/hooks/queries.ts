@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import type {
+  AdminUser,
   AuditEntry,
   Client,
   Comment,
   Platform,
   Post,
+  Role,
 } from '../lib/types'
 
 // All server data goes through TanStack Query: it caches by key, so other
@@ -53,6 +55,19 @@ export function useAuditLog(postId: number) {
     queryKey: ['audit', postId],
     queryFn: async () => {
       const { data } = await api.get<AuditEntry[]>(`/posts/${postId}/audit`)
+      return data
+    },
+  })
+}
+
+// Admin only. Pass a role to get e.g. just the reviewers.
+export function useUsers(role?: Role) {
+  return useQuery({
+    queryKey: ['users', role ?? 'all'],
+    queryFn: async () => {
+      const { data } = await api.get<AdminUser[]>('/users', {
+        params: role ? { role } : undefined,
+      })
       return data
     },
   })

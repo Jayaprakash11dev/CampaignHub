@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router'
 import { RequireAuth } from './auth/RequireAuth'
 import { Layout } from './components/Layout'
+import { ClientsPage } from './pages/admin/ClientsPage'
+import { UsersPage } from './pages/admin/UsersPage'
 import { BoardPage } from './pages/BoardPage'
 import { ComingSoon } from './pages/ComingSoon'
 import { LoginPage } from './pages/LoginPage'
@@ -44,7 +46,7 @@ export default function App() {
           path="admin/users"
           element={
             <RequireAuth roles={['ADMIN']}>
-              <ComingSoon title="Users" />
+              <UsersPage />
             </RequireAuth>
           }
         />
@@ -52,7 +54,7 @@ export default function App() {
           path="admin/clients"
           element={
             <RequireAuth roles={['ADMIN']}>
-              <ComingSoon title="Clients" />
+              <ClientsPage />
             </RequireAuth>
           }
         />

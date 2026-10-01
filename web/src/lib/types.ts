@@ -21,6 +21,11 @@ export interface User {
   role: Role
 }
 
+// As returned by the admin-only /users endpoints.
+export interface AdminUser extends User {
+  createdAt: string
+}
+
 export interface UserSummary {
   id: number
   name: string
