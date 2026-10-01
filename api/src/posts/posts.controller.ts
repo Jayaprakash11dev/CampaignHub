@@ -36,6 +36,14 @@ export class PostsController {
     return this.postsService.getPost(id, user);
   }
 
+  @Get(':id/audit')
+  findAuditLog(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.postsService.findAuditLog(id, user);
+  }
+
   @Post()
   @Roles(Role.CREATOR)
   create(@Body() dto: CreatePostDto, @CurrentUser() user: AuthUser) {

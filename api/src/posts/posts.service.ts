@@ -56,6 +56,18 @@ export class PostsService {
     return post;
   }
 
+  // Status history for the detail page's timeline, oldest first.
+  // `actor` is null for changes made by the publish job.
+  async findAuditLog(id: number, user: AuthUser) {
+    await this.findOne(id, user);
+
+    return this.prisma.auditLog.findMany({
+      where: { postId: id },
+      include: { actor: { select: { id: true, name: true, role: true } } },
+      orderBy: [{ timestamp: 'asc' }, { id: 'asc' }],
+    });
+  }
+
   // Single post for the detail page, plus the status changes this user is
   // allowed to make right now (the UI shows one button per entry).
   async getPost(id: number, user: AuthUser) {

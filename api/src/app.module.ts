@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { ClientsModule } from './clients/clients.module';
+import { CommentsModule } from './comments/comments.module';
 import { PostsModule } from './posts/posts.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
@@ -17,6 +18,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ClientsModule,
     PostsModule,
+    CommentsModule,
   ],
   providers: [
     // Order matters: authenticate first, then check the role.
