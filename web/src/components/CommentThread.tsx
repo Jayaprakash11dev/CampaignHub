@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { useComments } from '../hooks/queries'
+import { useSingleFlight } from '../hooks/useSingleFlight'
 import { api } from '../lib/api'
 import { formatIst } from '../lib/datetime'
 import { ApiErrorAlert } from './ApiErrorAlert'
@@ -21,9 +22,11 @@ export function CommentThread({ postId }: { postId: number }) {
     },
   })
 
+  // A double click must not post the comment twice.
+  const singleFlight = useSingleFlight()
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    if (message.trim()) add.mutate()
+    if (message.trim()) void singleFlight(() => add.mutateAsync())
   }
 
   return (

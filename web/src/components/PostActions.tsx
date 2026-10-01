@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { useSingleFlight } from '../hooks/useSingleFlight'
 import { api } from '../lib/api'
 import { formatIst } from '../lib/datetime'
 import { STATUS_LABEL } from '../lib/labels'
@@ -47,9 +48,10 @@ export function PostActions({
     },
   })
 
+  const singleFlight = useSingleFlight()
   function run(toStatus: PostStatus, withComment?: string) {
     setNotice(null)
-    transition.mutate({ toStatus, comment: withComment })
+    void singleFlight(() => transition.mutateAsync({ toStatus, comment: withComment }))
   }
 
   const allowed = post.allowedTransitions ?? []

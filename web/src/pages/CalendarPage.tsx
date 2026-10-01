@@ -10,7 +10,9 @@ import {
   istDayStartUtc,
   istToday,
   istWeekStart,
+  mondayOf,
 } from '../lib/datetime'
+import { isIsoDate } from '../lib/params'
 import type { Post } from '../lib/types'
 
 // Week view of one client's posts. Times and day boundaries are IST.
@@ -22,7 +24,10 @@ export function CalendarPage() {
   // No client in the URL yet: default to the first one the user can see.
   const clientId =
     Number(searchParams.get('client')) || clients.data?.[0]?.id || undefined
-  const week = searchParams.get('week') ?? istWeekStart()
+  // The URL can be edited by hand: ignore anything that isn't a real date,
+  // and snap any day to the Monday of its week.
+  const weekParam = searchParams.get('week')
+  const week = isIsoDate(weekParam) ? mondayOf(weekParam) : istWeekStart()
   const showInProgress = searchParams.get('all') === '1'
 
   function update(changes: Record<string, string | null>) {
@@ -74,7 +79,7 @@ export function CalendarPage() {
             aria-label="Client"
             value={clientId ?? ''}
             onChange={(e) => update({ client: e.target.value })}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm"
+            className="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm sm:w-56"
           >
             {clients.data?.map((c) => (
               <option key={c.id} value={c.id}>

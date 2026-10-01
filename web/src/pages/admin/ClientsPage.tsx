@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { ApiErrorAlert } from '../../components/ApiErrorAlert'
 import { EmptyState, ErrorState } from '../../components/States'
 import { useClients, useUsers } from '../../hooks/queries'
+import { useSingleFlight } from '../../hooks/useSingleFlight'
 import { api } from '../../lib/api'
 import type { AdminUser, Client } from '../../lib/types'
 
@@ -22,9 +23,10 @@ export function ClientsPage() {
     },
   })
 
+  const singleFlight = useSingleFlight()
   function handleCreate(event: FormEvent) {
     event.preventDefault()
-    create.mutate()
+    void singleFlight(() => create.mutateAsync())
   }
 
   return (
@@ -105,6 +107,23 @@ function ClientCard({
     onSuccess: onChanged,
   })
 
+  const [renaming, setRenaming] = useState(false)
+  const [newName, setNewName] = useState(client.name)
+  const rename = useMutation({
+    mutationFn: () => api.patch(`/clients/${client.id}`, { name: newName }),
+    onSuccess: async () => {
+      setRenaming(false)
+      await onChanged()
+    },
+  })
+
+  const singleFlight = useSingleFlight()
+
+  function handleRename(event: FormEvent) {
+    event.preventDefault()
+    void singleFlight(() => rename.mutateAsync())
+  }
+
   function startEditing() {
     setSelected(client.reviewers.map((r) => r.id))
     saveReviewers.reset()
@@ -124,25 +143,66 @@ function ClientCard({
       aria-label={client.name}
       className="flex flex-col rounded-xl border border-slate-200 bg-white p-4"
     >
-      <header className="flex items-start justify-between gap-2">
-        <div>
-          <h2 className="font-semibold">{client.name}</h2>
-          <p className="text-xs text-slate-500">
-            {client._count.posts} {client._count.posts === 1 ? 'post' : 'posts'}
-          </p>
-        </div>
-        <button
-          type="button"
-          disabled={hasPosts || remove.isPending}
-          title={hasPosts ? 'Clients with posts cannot be deleted' : undefined}
-          onClick={() => {
-            if (window.confirm(`Delete ${client.name}?`)) remove.mutate()
-          }}
-          className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-        >
-          Delete
-        </button>
-      </header>
+      {renaming ? (
+        <form onSubmit={handleRename} className="flex flex-wrap gap-2">
+          <input
+            aria-label="Client name"
+            required
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={rename.isPending || !newName.trim()}
+            className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            onClick={() => setRenaming(false)}
+            className="rounded-md px-2 py-1 text-sm text-slate-600 hover:bg-slate-100"
+          >
+            Cancel
+          </button>
+        </form>
+      ) : (
+        <header className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="font-semibold">{client.name}</h2>
+            <p className="text-xs text-slate-500">
+              {client._count.posts} {client._count.posts === 1 ? 'post' : 'posts'}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setNewName(client.name)
+                rename.reset()
+                setRenaming(true)
+              }}
+              className="text-sm font-medium text-slate-600 hover:underline"
+            >
+              Rename
+            </button>
+            <button
+              type="button"
+              disabled={hasPosts || remove.isPending}
+              title={hasPosts ? 'Clients with posts cannot be deleted' : undefined}
+              onClick={() => {
+                if (window.confirm(`Delete ${client.name}?`)) {
+                  void singleFlight(() => remove.mutateAsync())
+                }
+              }}
+              className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+            >
+              Delete
+            </button>
+          </div>
+        </header>
+      )}
 
       <div className="mt-3 flex-1">
         <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Reviewers</p>
@@ -183,9 +243,9 @@ function ClientCard({
         )}
       </div>
 
-      {(saveReviewers.isError || remove.isError) && (
+      {(saveReviewers.isError || remove.isError || rename.isError) && (
         <div className="mt-3">
-          <ApiErrorAlert error={saveReviewers.error ?? remove.error} />
+          <ApiErrorAlert error={saveReviewers.error ?? remove.error ?? rename.error} />
         </div>
       )}
 
@@ -194,7 +254,7 @@ function ClientCard({
           <>
             <button
               type="button"
-              onClick={() => saveReviewers.mutate()}
+              onClick={() => void singleFlight(() => saveReviewers.mutateAsync())}
               disabled={saveReviewers.isPending}
               className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
             >

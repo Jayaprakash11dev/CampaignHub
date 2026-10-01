@@ -52,6 +52,17 @@ export function istDayStartUtc(date: string): string {
   return dayjs.tz(date, IST).toISOString()
 }
 
+export function isInPast(iso: string): boolean {
+  return dayjs(iso).valueOf() <= dayjs().valueOf()
+}
+
+// Monday of the week containing a 'YYYY-MM-DD' date (plain date maths, no
+// timezone involved).
+export function mondayOf(date: string): string {
+  const day = dayjs(date)
+  return day.subtract((day.day() + 6) % 7, 'day').format(DATE_FORMAT)
+}
+
 // Today's date in India.
 export function istToday(): string {
   return dayjs().tz(IST).format(DATE_FORMAT)

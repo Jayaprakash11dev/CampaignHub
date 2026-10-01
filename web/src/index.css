@@ -6,4 +6,12 @@
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+  /* Long unbroken text (URLs in captions, long brand names) wraps instead of
+     pushing the page wider than the screen. */
+  overflow-wrap: anywhere;
+}
+
+/* A <select> grows to fit its longest option; never wider than its container. */
+select {
+  max-width: 100%;
 }

@@ -1,6 +1,7 @@
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import type { Role } from '../lib/types'
+import { ErrorBoundary } from './ErrorBoundary'
 
 interface NavItem {
   to: string
@@ -25,6 +26,7 @@ const ROLE_BADGE: Record<Role, string> = {
 
 export function Layout() {
   const { user, logout } = useAuth()
+  const location = useLocation()
 
   if (!user) return null
   const items = NAV_ITEMS.filter((item) => item.roles.includes(user.role))
@@ -78,7 +80,11 @@ export function Layout() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6">
-        <Outlet />
+        {/* Keyed by path: a crash on one page clears when you navigate away,
+            and the top bar keeps working. */}
+        <ErrorBoundary key={location.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   )

@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/useAuth'
 import { ApiErrorAlert } from '../../components/ApiErrorAlert'
 import { ErrorState } from '../../components/States'
 import { useUsers } from '../../hooks/queries'
+import { useSingleFlight } from '../../hooks/useSingleFlight'
 import { api } from '../../lib/api'
 import { formatIst } from '../../lib/datetime'
 import type { AdminUser, Role } from '../../lib/types'
@@ -126,7 +127,7 @@ export function UsersPage() {
         </div>
       )}
       <p className="text-xs text-slate-500">
-        Users who have written posts or comments can't be deleted; change their role instead.
+        Users with posts, comments or workflow history (approvals, submissions) can't be deleted, so the audit trail stays complete. Change their role instead.
       </p>
     </div>
   )
@@ -148,9 +149,10 @@ function AddUserForm({ onCreated }: { onCreated: () => Promise<void> }) {
     },
   })
 
+  const singleFlight = useSingleFlight()
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    create.mutate()
+    void singleFlight(() => create.mutateAsync())
   }
 
   return (

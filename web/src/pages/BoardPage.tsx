@@ -5,7 +5,7 @@ import { PostCard } from '../components/PostCard'
 import { EmptyState, ErrorState } from '../components/States'
 import { useClients, usePosts, type PostFilters } from '../hooks/queries'
 import { PLATFORM_LABEL, PLATFORMS, STATUS_ORDER } from '../lib/labels'
-import type { Platform, Post, PostStatus } from '../lib/types'
+import type { Post, PostStatus } from '../lib/types'
 
 const selectClass =
   'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none'
@@ -17,7 +17,8 @@ export function BoardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const filters: PostFilters = {
     clientId: Number(searchParams.get('client')) || undefined,
-    platform: (searchParams.get('platform') as Platform | null) ?? undefined,
+    // Unknown values (e.g. a hand-edited URL) are ignored, not sent to the API.
+    platform: PLATFORMS.find((p) => p === searchParams.get('platform')),
   }
   const hasFilters = Boolean(filters.clientId || filters.platform)
 

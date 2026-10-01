@@ -7,10 +7,13 @@ import { StatusBadge } from '../components/Badges'
 import { PostPreview } from '../components/PostPreview'
 import { EmptyState, ErrorState } from '../components/States'
 import { useClients, usePost } from '../hooks/queries'
+import { useSingleFlight } from '../hooks/useSingleFlight'
 import { api } from '../lib/api'
+import { getApiError } from '../lib/api-error'
 import { CAPTION_LIMITS, captionLength } from '../lib/caption'
 import { fromIstInput, nowIstInput, toIstInput } from '../lib/datetime'
 import { PLATFORM_LABEL, PLATFORMS } from '../lib/labels'
+import { parseId } from '../lib/params'
 import type { Client, Platform, Post } from '../lib/types'
 
 const EDITABLE_STATUSES = ['DRAFT', 'CHANGES_REQUESTED']
@@ -18,17 +21,31 @@ const EDITABLE_STATUSES = ['DRAFT', 'CHANGES_REQUESTED']
 // Used for both /posts/new and /posts/:id/edit.
 export function PostEditorPage() {
   const { id } = useParams()
-  const postId = id ? Number(id) : undefined
-  const isEdit = postId !== undefined
+  // The edit route always has an :id; it can still be junk like "abc".
+  const isEdit = id !== undefined
+  const postId = parseId(id)
   const { user } = useAuth()
 
   const post = usePost(postId)
   const clients = useClients()
 
+  const notFound = (
+    <EmptyState title="Post not found, or you don't have access to it">
+      <Link to="/" className="font-medium text-indigo-600 hover:underline">
+        Back to the board
+      </Link>
+    </EmptyState>
+  )
+  if (isEdit && postId === undefined) {
+    return notFound
+  }
   if (isEdit && post.isPending) {
     return <p className="text-sm text-slate-500">Loading post…</p>
   }
   if (isEdit && post.isError) {
+    if (getApiError(post.error).code === 'NOT_FOUND') {
+      return notFound
+    }
     return <ErrorState error={post.error} onRetry={() => void post.refetch()} />
   }
   if (clients.isError) {
@@ -145,15 +162,16 @@ function EditorForm({ post, clients, onReload }: EditorFormProps) {
     !overLimit &&
     !save.isPending
 
+  const singleFlight = useSingleFlight()
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    if (canSave) save.mutate()
+    if (canSave) void singleFlight(() => save.mutateAsync())
   }
 
   const clientName = clients.find((c) => String(c.id) === clientId)?.name ?? ''
 
   return (
-    <div className="mt-4 grid gap-8 lg:grid-cols-2">
+    <div className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-2">
       <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
         <label className="block">
           <span className="text-sm font-medium text-slate-700">Client</span>

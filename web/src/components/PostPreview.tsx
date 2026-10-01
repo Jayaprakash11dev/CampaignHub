@@ -42,7 +42,7 @@ export function PostPreview({ platform, clientName, caption, scheduledAt }: Prop
   )
 
   const text = (
-    <p className="text-sm break-words whitespace-pre-wrap text-slate-800">
+    <p className="text-sm whitespace-pre-wrap text-slate-800">
       {caption ? <Highlighted text={caption} /> : (
         <span className="text-slate-400">Your caption will appear here…</span>
       )}
