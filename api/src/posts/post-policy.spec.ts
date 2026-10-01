@@ -120,7 +120,12 @@ describe('transitionDenialReason', () => {
 });
 
 describe('allowedTransitionsFor', () => {
-  const post = (status: PostStatus) => ({ createdById: author.id, status });
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const post = (status: PostStatus, scheduledAt = tomorrow) => ({
+    createdById: author.id,
+    status,
+    scheduledAt,
+  });
 
   it('offers the author "submit" on a draft', () => {
     expect(
@@ -150,6 +155,33 @@ describe('allowedTransitionsFor', () => {
     expect(
       allowedTransitionsFor(admin, post(PostStatus.SCHEDULED), false),
     ).toEqual([]);
+  });
+
+  describe('when the scheduled time has passed', () => {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    it('no longer offers submit, approve or schedule', () => {
+      expect(
+        allowedTransitionsFor(author, post(PostStatus.DRAFT, yesterday), false),
+      ).toEqual([]);
+      expect(
+        allowedTransitionsFor(
+          admin,
+          post(PostStatus.APPROVED, yesterday),
+          false,
+        ),
+      ).toEqual([]);
+    });
+
+    it('still lets the reviewer request changes, so a new time can be set', () => {
+      expect(
+        allowedTransitionsFor(
+          reviewer,
+          post(PostStatus.IN_REVIEW, yesterday),
+          true,
+        ),
+      ).toEqual([PostStatus.CHANGES_REQUESTED]);
+    });
   });
 });
 

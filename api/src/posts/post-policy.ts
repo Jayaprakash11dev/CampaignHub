@@ -84,15 +84,27 @@ export function assertCanTransition(
   }
 }
 
+// Moving forward to these statuses needs the scheduled time to still be in
+// the future (the service checks it with assertInFuture).
+const NEEDS_FUTURE_TIME: readonly PostStatus[] = [
+  PostStatus.IN_REVIEW,
+  PostStatus.APPROVED,
+  PostStatus.SCHEDULED,
+];
+
 // The next statuses this user can move the post to right now. Sent to the
 // frontend so it only shows buttons for actions that will succeed.
 export function allowedTransitionsFor(
   user: AuthUser,
-  post: PostForPolicy,
+  post: PostForPolicy & { scheduledAt: Date },
   isAssignedReviewer: boolean,
+  now: Date = new Date(),
 ): PostStatus[] {
+  const timePassed = post.scheduledAt.getTime() <= now.getTime();
   return ALLOWED_TRANSITIONS[post.status].filter(
-    (to) => transitionDenialReason(user, post, to, isAssignedReviewer) === null,
+    (to) =>
+      transitionDenialReason(user, post, to, isAssignedReviewer) === null &&
+      !(timePassed && NEEDS_FUTURE_TIME.includes(to)),
   );
 }
 

@@ -17,6 +17,7 @@ import {
 import { assertTransition } from './post-workflow';
 import {
   assertInFuture,
+  PAST_TIME_MESSAGES,
   conflictWindow,
   findConflict,
   ScheduleTarget,
@@ -209,10 +210,16 @@ export class PostsService {
     if (to === PostStatus.CHANGES_REQUESTED) {
       assertChangeRequestComment(dto.comment);
     }
-    if (to === PostStatus.SCHEDULED) {
-      // The time was valid when the post was written, but it may have
-      // passed while the post was waiting for review.
-      assertInFuture(post.scheduledAt);
+    // The time was valid when the post was written, but it may have passed
+    // while the post was in the workflow. Check at every forward step, so a
+    // post can't be approved for a time that's gone: once APPROVED there is
+    // no way back to editing, and it could never be scheduled.
+    if (
+      to === PostStatus.IN_REVIEW ||
+      to === PostStatus.APPROVED ||
+      to === PostStatus.SCHEDULED
+    ) {
+      assertInFuture(post.scheduledAt, new Date(), PAST_TIME_MESSAGES[to]);
     }
 
     const comment = dto.comment?.trim();
@@ -257,7 +264,12 @@ export class PostsService {
   }
 
   private async withAllowedTransitions<
-    T extends { clientId: number; createdById: number; status: PostStatus },
+    T extends {
+      clientId: number;
+      createdById: number;
+      status: PostStatus;
+      scheduledAt: Date;
+    },
   >(post: T, user: AuthUser) {
     const isAssignedReviewer = await this.isAssignedReviewer(
       user,

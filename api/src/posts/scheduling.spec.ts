@@ -126,3 +126,16 @@ describe('assertInFuture', () => {
     );
   });
 });
+
+describe('assertInFuture with a custom message', () => {
+  it('uses the message passed in', () => {
+    const now = new Date('2026-10-10T10:00:00.000Z');
+    expect(() =>
+      assertInFuture(
+        new Date('2026-10-10T09:00:00.000Z'),
+        now,
+        'Pick a new time',
+      ),
+    ).toThrow('Pick a new time');
+  });
+});

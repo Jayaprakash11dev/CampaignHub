@@ -68,7 +68,11 @@ export function scheduleConflictError(
 }
 
 // `now` is a parameter so tests don't depend on the real clock.
-export function assertInFuture(scheduledAt: Date, now: Date = new Date()) {
+export function assertInFuture(
+  scheduledAt: Date,
+  now: Date = new Date(),
+  message = 'Scheduled time must be in the future',
+) {
   if (scheduledAt.getTime() > now.getTime()) {
     return;
   }
@@ -76,6 +80,17 @@ export function assertInFuture(scheduledAt: Date, now: Date = new Date()) {
     statusCode: 400,
     error: 'Bad Request',
     code: 'SCHEDULED_IN_PAST',
-    message: 'Scheduled time must be in the future',
+    message,
   });
 }
+
+// Messages for a post whose time passed while it was moving through the
+// workflow, saying what to do next.
+export const PAST_TIME_MESSAGES = {
+  IN_REVIEW:
+    'The scheduled time has passed. Edit the post and pick a new time before submitting it.',
+  APPROVED:
+    'The scheduled time has passed. Request changes so the creator can pick a new time.',
+  SCHEDULED:
+    'The scheduled time has passed, so the post can no longer be scheduled.',
+} as const;
