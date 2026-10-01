@@ -5,6 +5,7 @@ import { BoardPage } from './pages/BoardPage'
 import { ComingSoon } from './pages/ComingSoon'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { PostEditorPage } from './pages/PostEditorPage'
 
 export default function App() {
   return (
@@ -25,7 +26,7 @@ export default function App() {
           path="posts/new"
           element={
             <RequireAuth roles={['CREATOR']}>
-              <ComingSoon title="New post" />
+              <PostEditorPage />
             </RequireAuth>
           }
         />
@@ -34,7 +35,7 @@ export default function App() {
           path="posts/:id/edit"
           element={
             <RequireAuth roles={['CREATOR']}>
-              <ComingSoon title="Edit post" />
+              <PostEditorPage />
             </RequireAuth>
           }
         />

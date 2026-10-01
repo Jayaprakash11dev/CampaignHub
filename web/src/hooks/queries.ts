@@ -21,6 +21,17 @@ export function usePosts(filters: PostFilters) {
   })
 }
 
+export function usePost(id: number | undefined) {
+  return useQuery({
+    queryKey: ['post', id],
+    queryFn: async () => {
+      const { data } = await api.get<Post>(`/posts/${id}`)
+      return data
+    },
+    enabled: id !== undefined,
+  })
+}
+
 export function useClients() {
   return useQuery({
     queryKey: ['clients'],
