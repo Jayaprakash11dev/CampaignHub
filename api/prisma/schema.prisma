@@ -6,3 +6,107 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum Role {
+  ADMIN
+  CREATOR
+  REVIEWER
+}
+
+enum Platform {
+  INSTAGRAM
+  FACEBOOK
+  LINKEDIN
+  X
+}
+
+enum PostStatus {
+  DRAFT
+  IN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  // clients this user reviews (only meaningful for REVIEWER)
+  reviewingClients Client[]   @relation("ClientReviewers")
+  posts            Post[]
+  comments         Comment[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  reviewers User[] @relation("ClientReviewers")
+  posts     Post[]
+
+  @@map("clients")
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  clientId    Int
+  platform    Platform
+  caption     String
+  scheduledAt DateTime   @db.Timestamptz(3)
+  status      PostStatus @default(DRAFT)
+  createdById Int
+  // bumped on every write, used for optimistic locking
+  version     Int        @default(1)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
+
+  client    Client     @relation(fields: [clientId], references: [id])
+  createdBy User       @relation(fields: [createdById], references: [id])
+  comments  Comment[]
+  auditLogs AuditLog[]
+
+  @@index([clientId, platform, scheduledAt])
+  @@index([status])
+  @@map("posts")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  authorId  Int
+  message   String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([postId, createdAt])
+  @@map("comments")
+}
+
+model AuditLog {
+  id         Int         @id @default(autoincrement())
+  postId     Int
+  // null when the change was made by the system (publish job)
+  actorId    Int?
+  // null for the initial "created as DRAFT" entry
+  fromStatus PostStatus?
+  toStatus   PostStatus
+  timestamp  DateTime    @default(now()) @db.Timestamptz(3)
+
+  post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([postId, timestamp])
+  @@map("audit_logs")
+}
