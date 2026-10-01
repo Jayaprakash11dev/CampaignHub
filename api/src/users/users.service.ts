@@ -40,7 +40,7 @@ export class UsersService {
     try {
       return await this.prisma.user.create({
         data: {
-          name: dto.name.trim(),
+          name: dto.name,
           email: dto.email.toLowerCase(),
           role: dto.role,
           passwordHash: await bcrypt.hash(dto.password, SALT_ROUNDS),
@@ -65,7 +65,7 @@ export class UsersService {
     }
 
     const data: Prisma.UserUpdateInput = {};
-    if (dto.name) data.name = dto.name.trim();
+    if (dto.name) data.name = dto.name;
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
     }
@@ -92,7 +92,7 @@ export class UsersService {
       }
       if (isPrismaError(err, 'P2003')) {
         throw new ConflictException(
-          'User has posts or comments and cannot be deleted',
+          'User has posts, comments or workflow history and cannot be deleted. Change their role instead.',
         );
       }
       throw err;

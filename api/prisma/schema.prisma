@@ -105,7 +105,9 @@ model AuditLog {
   timestamp  DateTime    @default(now()) @db.Timestamptz(3)
 
   post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
-  actor User? @relation(fields: [actorId], references: [id])
+  // Restrict, not Prisma's default SetNull for optional relations: deleting a
+  // user must never turn their actions into "System" entries.
+  actor User? @relation(fields: [actorId], references: [id], onDelete: Restrict)
 
   @@index([postId, timestamp])
   @@map("audit_logs")
