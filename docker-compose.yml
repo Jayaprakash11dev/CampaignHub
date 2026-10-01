@@ -1,3 +1,5 @@
+# Whole stack:      docker compose up --build    -> http://localhost:8088
+# Only the database (for local development):  docker compose up -d db
 services:
   db:
     image: postgres:16-alpine
@@ -7,6 +9,7 @@ services:
       POSTGRES_PASSWORD: campaignhub
       POSTGRES_DB: campaignhub
     ports:
+      # 5434 on the host to avoid clashing with a local Postgres on 5432
       - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -15,6 +18,37 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    environment:
+      # "db" is the service name above; containers reach it on port 5432.
+      DATABASE_URL: postgresql://campaignhub:campaignhub@db:5432/campaignhub?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRES_IN: 1d
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/docs').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    ports:
+      # 8088 on the host (8080 is often taken by other local web servers)
+      - "8088:80"
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:

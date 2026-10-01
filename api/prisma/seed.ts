@@ -3,6 +3,7 @@
  *
  * WARNING: this deletes all existing users, clients and posts first, so the
  * seed can be re-run at any time. Only use it on a local/dev database.
+ * With --if-empty it only seeds when there are no users yet (used by Docker).
  *
  * Every user's password is Password@123.
  */
@@ -317,6 +318,13 @@ function validate(posts: SeedPost[]) {
 }
 
 async function main() {
+  // Used by the Docker container on start-up: seed a brand-new database,
+  // but never wipe one that already has data.
+  if (process.argv.includes('--if-empty') && (await prisma.user.count()) > 0) {
+    console.log('Database already has data, skipping seed.');
+    return;
+  }
+
   validate(POSTS);
 
   // Children first, because of foreign keys.
