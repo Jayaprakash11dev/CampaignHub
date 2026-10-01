@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { ListPostsQuery } from './dto/list-posts.query';
+import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
 
 @Controller('posts')
@@ -36,5 +38,15 @@ export class PostsController {
   @Roles(Role.CREATOR)
   create(@Body() dto: CreatePostDto, @CurrentUser() user: AuthUser) {
     return this.postsService.create(dto, user);
+  }
+
+  @Patch(':id')
+  @Roles(Role.CREATOR)
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePostDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.postsService.update(id, dto, user);
   }
 }

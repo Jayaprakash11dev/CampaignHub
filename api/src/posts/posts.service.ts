@@ -5,6 +5,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { assertCaptionFits } from './caption-limits';
 import { CreatePostDto } from './dto/create-post.dto';
 import { ListPostsQuery } from './dto/list-posts.query';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { versionMismatchError } from './post-errors';
+import { assertCanEdit } from './post-policy';
 import {
   assertInFuture,
   conflictWindow,
@@ -47,12 +50,7 @@ export class PostsService {
   }
 
   async create(dto: CreatePostDto, user: AuthUser) {
-    const client = await this.prisma.client.findUnique({
-      where: { id: dto.clientId },
-    });
-    if (!client) {
-      throw new NotFoundException(`Client ${dto.clientId} not found`);
-    }
+    await this.assertClientExists(dto.clientId);
 
     const scheduledAt = new Date(dto.scheduledAt);
     assertCaptionFits(dto.platform, dto.caption);
@@ -88,6 +86,77 @@ export class PostsService {
 
       return post;
     });
+  }
+
+  async update(id: number, dto: UpdatePostDto, user: AuthUser) {
+    const post = await this.findOne(id, user);
+    assertCanEdit(user, post);
+
+    // Fail fast if the client is already out of date. The real guarantee
+    // is the `version` condition in updateMany below.
+    if (dto.version !== post.version) {
+      throw versionMismatchError(post.version);
+    }
+
+    const next = {
+      clientId: dto.clientId ?? post.clientId,
+      platform: dto.platform ?? post.platform,
+      caption: dto.caption ?? post.caption,
+      scheduledAt: dto.scheduledAt
+        ? new Date(dto.scheduledAt)
+        : post.scheduledAt,
+    };
+
+    if (next.clientId !== post.clientId) {
+      await this.assertClientExists(next.clientId);
+    }
+
+    // Checked on every edit: switching an existing caption to X can make
+    // it too long even if the caption itself didn't change.
+    assertCaptionFits(next.platform, next.caption);
+
+    const slotChanged =
+      next.clientId !== post.clientId ||
+      next.platform !== post.platform ||
+      next.scheduledAt.getTime() !== post.scheduledAt.getTime();
+    if (slotChanged) {
+      assertInFuture(next.scheduledAt);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (slotChanged) {
+        await this.lockSlot(tx, next.clientId, next.platform);
+        await this.assertNoConflict(tx, { ...next, id });
+      }
+
+      // Only matches if nobody has saved since the client loaded the post.
+      const { count } = await tx.post.updateMany({
+        where: { id, version: dto.version },
+        data: { ...next, version: { increment: 1 } },
+      });
+      if (count === 0) {
+        const current = await tx.post.findUniqueOrThrow({
+          where: { id },
+          select: { version: true },
+        });
+        throw versionMismatchError(current.version);
+      }
+
+      return tx.post.findUniqueOrThrow({
+        where: { id },
+        include: postInclude,
+      });
+    });
+  }
+
+  private async assertClientExists(clientId: number) {
+    const client = await this.prisma.client.findUnique({
+      where: { id: clientId },
+      select: { id: true },
+    });
+    if (!client) {
+      throw new NotFoundException(`Client ${clientId} not found`);
+    }
   }
 
   // Reviewers only see posts for clients assigned to them.
