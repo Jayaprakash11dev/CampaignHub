@@ -10,6 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -19,6 +20,8 @@ import { ListUsersQuery } from './dto/list-users.query';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
+@ApiTags('Users (admin)')
+@ApiBearerAuth()
 @Controller('users')
 @Roles(Role.ADMIN)
 export class UsersController {
