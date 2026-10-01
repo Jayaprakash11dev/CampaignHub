@@ -6,10 +6,16 @@ review workflow (draft → review → approval → scheduling → publishing) be
 - `api/` – NestJS + Prisma + PostgreSQL
 - `web/` – React + Vite
 
-## Local database
+## Local development
 
 ```bash
+# Postgres runs in Docker, exposed on host port 5434 (to avoid clashing with a local install)
 docker compose up -d db
+
+cd api
+cp .env.example .env
+npm install
+npm run start:dev      # http://localhost:3000/api
 ```
 
-Setup steps, environment variables and seed credentials will be documented here as the project comes together.
+Full setup steps, environment variables and seed credentials will be documented here as the project comes together.
