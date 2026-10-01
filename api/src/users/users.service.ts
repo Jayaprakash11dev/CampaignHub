@@ -7,6 +7,7 @@ import {
 import { Prisma, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { AuthUser } from '../auth/auth-user';
+import { isPrismaError } from '../common/prisma-errors';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -97,10 +98,4 @@ export class UsersService {
       throw err;
     }
   }
-}
-
-function isPrismaError(err: unknown, code: string): boolean {
-  return (
-    err instanceof Prisma.PrismaClientKnownRequestError && err.code === code
-  );
 }
