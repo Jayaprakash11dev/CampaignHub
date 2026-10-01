@@ -95,18 +95,33 @@ The seed ([api/prisma/seed.ts](api/prisma/seed.ts)) creates 3 clients and **18 p
 
 ```bash
 cd api
-npm test        # 132 tests
+npm test            # 135 unit tests (no database needed)
+npm run test:e2e    # 58 end-to-end API tests (needs Postgres running)
 ```
+
+### Unit tests
 
 | Spec | Tests | Covers |
 |---|---|---|
 | [post-workflow.spec.ts](api/src/posts/post-workflow.spec.ts) | 48 | **Status transitions**: the 6 allowed moves pass, all 30 other combinations are rejected with 400 and a clear message |
-| [scheduling.spec.ts](api/src/posts/scheduling.spec.ts) | 15 | **Scheduling conflict**: 1h59m apart conflicts, exactly 2h is allowed, other client/platform and the post itself are ignored, nearest conflict is reported; future-time rule |
-| [post-policy.spec.ts](api/src/posts/post-policy.spec.ts) | 34 | Who may edit / submit / approve / schedule, self-approval, unassigned reviewers, 10-character change-request comment |
+| [scheduling.spec.ts](api/src/posts/scheduling.spec.ts) | 16 | **Scheduling conflict**: 1h59m apart conflicts, exactly 2h is allowed, other client/platform and the post itself are ignored, nearest conflict is reported; future-time rule |
+| [post-policy.spec.ts](api/src/posts/post-policy.spec.ts) | 36 | Who may edit / submit / approve / schedule, self-approval, unassigned reviewers, 10-character change-request comment, no forward actions once the time has passed |
 | [caption-limits.spec.ts](api/src/posts/caption-limits.spec.ts) | 12 | Per-platform limits at and just over the limit; emoji count as one character |
 | [posts.service.spec.ts](api/src/posts/posts.service.spec.ts) | 9 | Optimistic locking (stale version → 409, lost race → 409), transition writes status + audit + comment together, date-range filter |
 | [publish-scheduled-posts.job.spec.ts](api/src/scheduler/publish-scheduled-posts.job.spec.ts) | 5 | Background publish job, including two runs racing for the same post |
 | [http-exception.filter.spec.ts](api/src/common/http-exception.filter.spec.ts) | 9 | Consistent error response shape |
+
+### End-to-end API tests
+
+These start the real application and call it over HTTP, then check **both the response and what was saved in the database**. They run against a separate database, `campaignhub_test` (created automatically on the same Postgres). The setup refuses to run against any database whose name doesn't end in `_test`, so it can't wipe the development data. Override it with `DATABASE_URL_TEST` if needed.
+
+| Spec | Covers |
+|---|---|
+| [auth.e2e-spec.ts](api/test/auth.e2e-spec.ts) | Login, same error for wrong password and unknown email, invalid/deleted-user tokens, role changes taking effect immediately |
+| [permissions.e2e-spec.ts](api/test/permissions.e2e-spec.ts) | Every role calling endpoints it must not use (admin routes, create, edit, approve, schedule, publish), reviewers of other clients getting 404, self-approval |
+| [workflow.e2e-spec.ts](api/test/workflow.e2e-spec.ts) | The full lifecycle with the audit trail in order, invalid transitions changing nothing, change-request comments, posts whose time has passed, the publish job, audit history surviving user deletion |
+| [concurrency.e2e-spec.ts](api/test/concurrency.e2e-spec.ts) | Two creates racing for one slot, two simultaneous edits, a double-clicked transition, a stale page acting on a moved post |
+| [validation.e2e-spec.ts](api/test/validation.e2e-spec.ts) | Blank values, per-platform limits, dates and timezones, invalid ids, special characters, case-insensitive duplicates, reviewer assignment rules |
 
 ---
 
@@ -132,7 +147,7 @@ npm test        # 132 tests
 | Requesting changes needs a comment of at least 10 characters | `assertChangeRequestComment` – [post-policy.ts](api/src/posts/post-policy.ts) |
 | Caption limits: X 280, Instagram 2,200, LinkedIn 3,000, Facebook 5,000 | [caption-limits.ts](api/src/posts/caption-limits.ts) |
 | Same client + platform at least 2 hours apart → **409** with `conflictingPostId` | [scheduling.ts](api/src/posts/scheduling.ts) + `assertNoConflict` / `lockSlot` in [posts.service.ts](api/src/posts/posts.service.ts) |
-| Scheduled time must be in the future; stored in UTC, shown in IST | `assertInFuture` – [scheduling.ts](api/src/posts/scheduling.ts); [web/src/lib/datetime.ts](web/src/lib/datetime.ts) |
+| Scheduled time must be in the future (checked on create, on edit when the time changes, and on submit, approve and schedule); stored in UTC, shown in IST | `assertInFuture` – [scheduling.ts](api/src/posts/scheduling.ts); [web/src/lib/datetime.ts](web/src/lib/datetime.ts) |
 | Optimistic locking: updates send `version`, mismatch → **409** | conditional `updateMany({ where: { id, version } })` in [posts.service.ts](api/src/posts/posts.service.ts) |
 | Every status change creates an AuditLog entry | `transition()` in [posts.service.ts](api/src/posts/posts.service.ts) |
 | A job runs every minute and publishes due SCHEDULED posts | [publish-scheduled-posts.job.ts](api/src/scheduler/publish-scheduled-posts.job.ts) |
@@ -144,7 +159,7 @@ npm test        # 132 tests
 - [x] Post detail page with role-based actions, comment thread and audit timeline
 - [x] Clear messages for 409 (schedule conflict with a link to the clashing post; version conflict with "Load latest version") and 400 (invalid transition)
 - [x] Loading, empty and error states (with retry) on every page; responsive down to phone width
-- [x] Admin pages for users and clients, including assigning reviewers
+- [x] Admin pages for users and clients: create, rename, delete, change roles, assign reviewers
 
 ### Bonus
 - [x] Swagger API documentation – `/api/docs`
@@ -164,7 +179,8 @@ Where the brief left room for interpretation:
 - **PUBLISHED is set only by the background job**, never by a user.
 - **Creators can see all posts** (the whole agency board) but only edit their own. Reviewers only see their clients' posts.
 - **Comments don't change a post's version**, so a reviewer's comment doesn't cause a 409 for someone editing.
-- "Clients" are created by the admin; a client with posts can't be deleted, and neither can a user who has written posts or comments.
+- **The scheduled time must still be in the future when a post is submitted, approved and scheduled**, not only when it's written. Otherwise a post could be approved for a time that has already gone, and the workflow has no way back from APPROVED to fix it. If the time passes during review, the reviewer requests changes and the creator picks a new time. The one case left is an approved post whose time passes before anyone schedules it: within the brief's transitions it can't move again (the page explains this).
+- Clients are managed by the admin; a client with posts can't be deleted, and neither can a user with posts, comments or workflow history (so the audit trail never loses who did what). Client names are unique regardless of letter case.
 
 ---
 
