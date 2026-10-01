@@ -20,6 +20,8 @@ export class CreatePostDto {
   // checked in the service because it depends on `platform`.
   @IsString()
   @IsNotEmpty()
+  // Rejects a caption of only spaces/newlines; otherwise it's stored as typed.
+  @Matches(/\S/, { message: 'caption must not be blank' })
   @MaxLength(5000)
   caption: string;
 

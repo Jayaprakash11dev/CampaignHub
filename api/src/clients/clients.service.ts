@@ -48,9 +48,10 @@ export class ClientsService {
   }
 
   async create(dto: CreateClientDto) {
+    await this.assertNameIsFree(dto.name);
     try {
       return await this.prisma.client.create({
-        data: { name: dto.name.trim() },
+        data: { name: dto.name },
         select: clientSelect,
       });
     } catch (err) {
@@ -62,10 +63,13 @@ export class ClientsService {
   }
 
   async update(id: number, dto: UpdateClientDto) {
+    if (dto.name) {
+      await this.assertNameIsFree(dto.name, id);
+    }
     try {
       return await this.prisma.client.update({
         where: { id },
-        data: { name: dto.name?.trim() },
+        data: { name: dto.name },
         select: clientSelect,
       });
     } catch (err) {
@@ -118,6 +122,22 @@ export class ClientsService {
       data: { reviewers: { set: reviewerIds.map((rid) => ({ id: rid })) } },
       select: clientSelect,
     });
+  }
+
+  // The database's unique index is case-sensitive, so "Acme" and "acme"
+  // would both be allowed. Check case-insensitively first. (The unique
+  // index still catches exact duplicates created at the same moment.)
+  private async assertNameIsFree(name: string, exceptId?: number) {
+    const existing = await this.prisma.client.findFirst({
+      where: {
+        name: { equals: name, mode: 'insensitive' },
+        id: exceptId ? { not: exceptId } : undefined,
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ConflictException('Client name already exists');
+    }
   }
 
   // Reviewers only see clients assigned to them. Admins and creators see

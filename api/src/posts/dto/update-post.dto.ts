@@ -31,6 +31,7 @@ export class UpdatePostDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
+  @Matches(/\S/, { message: 'caption must not be blank' })
   @MaxLength(5000)
   caption?: string;
 
