@@ -16,8 +16,10 @@ Design decisions and trade-offs are in [DECISIONS.md](DECISIONS.md).
 
 | What | URL |
 |---|---|
-| Web app (Vercel) | _VERCEL_URL_ |
-| API docs (Render) | _RENDER_URL_/api/docs |
+| Web app (Vercel) | https://campaign-hub-lemon.vercel.app |
+| API (Render) | https://campaignhub-api-ttcs.onrender.com/api |
+| API docs (Swagger) | https://campaignhub-api-ttcs.onrender.com/api/docs |
+| Health check | https://campaignhub-api-ttcs.onrender.com/api/health |
 
 Log in with any [seeded account](#seeded-accounts) (password `Password@123`), or use the quick-fill buttons on the login page.
 
@@ -204,7 +206,7 @@ These start the real application and call it over HTTP, then check **both the re
 - [x] Docker Compose setup – database, API and web app with one command
 - [x] Weekly calendar of scheduled posts per client (IST)
 - [ ] Real-time notifications (Socket.IO / SSE) – not done
-- [ ] Live deployment – not done
+- [x] Live deployment – Vercel (web), Render (API), Neon (Postgres)
 
 ---
 
