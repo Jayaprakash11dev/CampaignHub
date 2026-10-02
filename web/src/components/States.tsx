@@ -39,9 +39,9 @@ export function EmptyState({
   children?: ReactNode
 }) {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center">
-      <p className="font-medium text-slate-800">{title}</p>
-      {children && <div className="mt-2 text-sm text-slate-500">{children}</div>}
+    <div className="rounded-lg border border-dashed border-stone-300 bg-white p-10 text-center">
+      <p className="font-medium text-stone-800">{title}</p>
+      {children && <div className="mt-2 text-sm text-stone-500">{children}</div>}
     </div>
   )
 }

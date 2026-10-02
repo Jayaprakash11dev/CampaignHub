@@ -11,23 +11,23 @@ export function AuditTimeline({ postId }: { postId: number }) {
 
   return (
     <section aria-labelledby="history-heading">
-      <h2 id="history-heading" className="text-sm font-semibold text-slate-700">
+      <h2 id="history-heading" className="text-sm font-semibold text-stone-700">
         History
       </h2>
 
       {audit.isPending ? (
-        <div className="mt-3 h-32 animate-pulse rounded-lg bg-slate-100" />
+        <div className="mt-3 h-32 animate-pulse rounded-lg bg-stone-100" />
       ) : audit.isError ? (
         <div className="mt-3">
           <ErrorState error={audit.error} onRetry={() => void audit.refetch()} />
         </div>
       ) : (
-        <ol className="mt-3 border-l-2 border-slate-200">
+        <ol className="mt-3 border-l-2 border-stone-200">
           {audit.data.map((entry) => (
             <li key={entry.id} className="relative mb-4 pl-4 last:mb-0">
-              <span className="absolute top-1.5 -left-[5px] h-2 w-2 rounded-full bg-indigo-500" />
-              <p className="text-sm text-slate-800">{describe(entry)}</p>
-              <p className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+              <span className="absolute top-1.5 -left-[5px] h-2 w-2 rounded-full bg-brand-500" />
+              <p className="text-sm text-stone-800">{describe(entry)}</p>
+              <p className="mt-0.5 flex items-center gap-2 text-xs text-stone-500">
                 <StatusBadge status={entry.toStatus} />
                 {formatIst(entry.timestamp)} IST
               </p>

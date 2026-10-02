@@ -63,6 +63,13 @@ export function mondayOf(date: string): string {
   return day.subtract((day.day() + 6) % 7, 'day').format(DATE_FORMAT)
 }
 
+// Minutes since midnight IST, e.g. 6:30 PM -> 1110. Used to place posts on
+// the calendar's time grid.
+export function istMinutesOfDay(iso?: string): number {
+  const time = (iso ? dayjs(iso) : dayjs()).tz(IST)
+  return time.hour() * 60 + time.minute()
+}
+
 // Today's date in India.
 export function istToday(): string {
   return dayjs().tz(IST).format(DATE_FORMAT)

@@ -17,7 +17,7 @@ export function RequireAuth({ children, roles }: Props) {
 
   if (checking) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-slate-500">
+      <div className="flex h-screen items-center justify-center text-sm text-stone-500">
         Loading…
       </div>
     )
@@ -29,9 +29,9 @@ export function RequireAuth({ children, roles }: Props) {
 
   if (roles && !roles.includes(user.role)) {
     return (
-      <div className="mx-auto mt-16 max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center">
+      <div className="mx-auto mt-16 max-w-md rounded-lg border border-stone-200 bg-white p-6 text-center">
         <h1 className="text-lg font-semibold">No access</h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-stone-600">
           You don't have access to this page with the {user.role.toLowerCase()} role.
         </p>
       </div>

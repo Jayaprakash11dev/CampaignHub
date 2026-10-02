@@ -23,8 +23,8 @@ export function PostDetailPage() {
   if (post.isPending) {
     return (
       <div className="space-y-4" aria-label="Loading post">
-        <div className="h-8 w-64 animate-pulse rounded bg-slate-200" />
-        <div className="h-64 animate-pulse rounded-xl bg-slate-200" />
+        <div className="h-8 w-64 animate-pulse rounded bg-stone-200" />
+        <div className="h-64 animate-pulse rounded-xl bg-stone-200" />
       </div>
     )
   }
@@ -44,17 +44,17 @@ export function PostDetailPage() {
 
   return (
     <div>
-      <Link to="/" className="text-sm text-slate-500 hover:text-slate-800">
+      <Link to="/" className="text-sm text-stone-500 hover:text-stone-800">
         ← Board
       </Link>
 
       <header className="mt-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-xl font-semibold">Post #{p.id}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Post #{p.id}</h1>
         <StatusBadge status={p.status} />
         <PlatformBadge platform={p.platform} />
       </header>
-      <p className="mt-1 text-sm text-slate-600">
-        <span className="font-medium text-slate-800">{p.client.name}</span> · by {p.createdBy.name}{' '}
+      <p className="mt-1 text-sm text-stone-600">
+        <span className="font-medium text-stone-800">{p.client.name}</span> · by {p.createdBy.name}{' '}
         · goes live <span className="font-medium">{formatIst(p.scheduledAt)} IST</span> · v{p.version}
       </p>
 
@@ -82,7 +82,7 @@ export function PostDetailPage() {
           </div>
           <CommentThread postId={p.id} />
         </div>
-        <aside className="lg:border-l lg:border-slate-200 lg:pl-6">
+        <aside className="lg:border-l lg:border-stone-200 lg:pl-6">
           <AuditTimeline postId={p.id} />
         </aside>
       </div>
@@ -102,7 +102,7 @@ const PAST_TIME_HINT: Partial<Record<PostStatus, string>> = {
 function PostNotFound() {
   return (
     <EmptyState title="Post not found, or you don't have access to it">
-      <Link to="/" className="font-medium text-indigo-600 hover:underline">
+      <Link to="/" className="font-medium text-brand-600 hover:underline">
         Back to the board
       </Link>
     </EmptyState>

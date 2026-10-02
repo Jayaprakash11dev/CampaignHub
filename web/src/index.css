@@ -2,13 +2,42 @@
 
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Terracotta brand scale. Change the colour of the whole app here. */
+  --color-brand-50: #fdf4ef;
+  --color-brand-100: #fbe6da;
+  --color-brand-200: #f6c9b1;
+  --color-brand-300: #efa27f;
+  --color-brand-400: #e5774c;
+  --color-brand-500: #d85a2b;
+  --color-brand-600: #c2410c;
+  --color-brand-700: #9a3412;
+  --color-brand-800: #7c2d12;
+  --color-brand-900: #5c230f;
+}
+
+:root {
+  color-scheme: light;
+  /* Checkboxes, radios and date pickers use the brand colour, not the
+     browser's default blue. */
+  accent-color: var(--color-brand-600);
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-stone-50 text-stone-900 antialiased;
   /* Long unbroken text (URLs in captions, long brand names) wraps instead of
      pushing the page wider than the screen. */
   overflow-wrap: anywhere;
+}
+
+/* Keyboard focus ring in the brand colour instead of the browser's blue. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-brand-100);
 }
 
 /* A <select> grows to fit its longest option; never wider than its container. */

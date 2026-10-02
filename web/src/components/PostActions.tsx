@@ -63,8 +63,8 @@ export function PostActions({
 
   const buttonBase =
     'rounded-md px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50'
-  const primary = `${buttonBase} bg-indigo-600 text-white hover:bg-indigo-700`
-  const secondary = `${buttonBase} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50`
+  const primary = `${buttonBase} bg-brand-600 text-white hover:bg-brand-700`
+  const secondary = `${buttonBase} border border-stone-300 bg-white text-stone-700 hover:bg-stone-50`
 
   return (
     <div className="space-y-3">
@@ -106,25 +106,25 @@ export function PostActions({
           </Link>
         )}
         {allowed.length === 0 && !canEdit && (
-          <p className="text-sm text-slate-500">{waitingText(post)}</p>
+          <p className="text-sm text-stone-500">{waitingText(post)}</p>
         )}
       </div>
 
       {changesOpen && (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <label className="block text-sm font-medium text-slate-700">
+        <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+          <label className="block text-sm font-medium text-stone-700">
             What needs to change?
             <textarea
               rows={3}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal"
+              className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal"
               placeholder="Explain what the creator should change…"
             />
           </label>
           <div className="mt-2 flex items-center justify-between gap-2">
             <span
-              className={`text-xs ${commentLength >= MIN_COMMENT ? 'text-emerald-700' : 'text-slate-500'}`}
+              className={`text-xs ${commentLength >= MIN_COMMENT ? 'text-emerald-700' : 'text-stone-500'}`}
             >
               {commentLength}/{MIN_COMMENT} characters minimum
             </span>

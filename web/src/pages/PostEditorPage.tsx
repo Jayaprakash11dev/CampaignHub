@@ -13,6 +13,7 @@ import { getApiError } from '../lib/api-error'
 import { CAPTION_LIMITS, captionLength } from '../lib/caption'
 import { fromIstInput, nowIstInput, toIstInput } from '../lib/datetime'
 import { PLATFORM_LABEL, PLATFORMS } from '../lib/labels'
+import { PlatformIcon } from '../components/PlatformIcon'
 import { parseId } from '../lib/params'
 import type { Client, Platform, Post } from '../lib/types'
 
@@ -31,7 +32,7 @@ export function PostEditorPage() {
 
   const notFound = (
     <EmptyState title="Post not found, or you don't have access to it">
-      <Link to="/" className="font-medium text-indigo-600 hover:underline">
+      <Link to="/" className="font-medium text-brand-600 hover:underline">
         Back to the board
       </Link>
     </EmptyState>
@@ -40,7 +41,7 @@ export function PostEditorPage() {
     return notFound
   }
   if (isEdit && post.isPending) {
-    return <p className="text-sm text-slate-500">Loading post…</p>
+    return <p className="text-sm text-stone-500">Loading post…</p>
   }
   if (isEdit && post.isError) {
     if (getApiError(post.error).code === 'NOT_FOUND') {
@@ -68,7 +69,7 @@ export function PostEditorPage() {
             Current status: <StatusBadge status={post.data.status} />
           </p>
           <p className="mt-3">
-            <Link to={`/posts/${post.data.id}`} className="font-medium text-indigo-600 hover:underline">
+            <Link to={`/posts/${post.data.id}`} className="font-medium text-brand-600 hover:underline">
               Back to the post
             </Link>
           </p>
@@ -79,7 +80,7 @@ export function PostEditorPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold">
+      <h1 className="text-2xl font-semibold tracking-tight">
         {isEdit ? `Edit post #${postId}` : 'New post'}
       </h1>
       {post.data?.status === 'CHANGES_REQUESTED' && (
@@ -172,14 +173,14 @@ function EditorForm({ post, clients, onReload }: EditorFormProps) {
 
   return (
     <div className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-2">
-      <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
+      <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-stone-200 bg-white p-5">
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Client</span>
+          <span className="text-sm font-medium text-stone-700">Client</span>
           <select
             required
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm"
           >
             <option value="">Select a client…</option>
             {clients.map((client) => (
@@ -191,7 +192,7 @@ function EditorForm({ post, clients, onReload }: EditorFormProps) {
         </label>
 
         <fieldset>
-          <legend className="text-sm font-medium text-slate-700">Platform</legend>
+          <legend className="text-sm font-medium text-stone-700">Platform</legend>
           <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {PLATFORMS.map((p) => (
               <button
@@ -199,12 +200,13 @@ function EditorForm({ post, clients, onReload }: EditorFormProps) {
                 type="button"
                 aria-pressed={platform === p}
                 onClick={() => setPlatform(p)}
-                className={`rounded-md border px-3 py-2 text-sm font-medium ${
+                className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium ${
                   platform === p
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                    : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                    ? 'border-brand-600 bg-brand-50 text-brand-700'
+                    : 'border-stone-300 text-stone-600 hover:bg-stone-50'
                 }`}
               >
+                <PlatformIcon platform={p} />
                 {PLATFORM_LABEL[p]}
               </button>
             ))}
@@ -212,12 +214,12 @@ function EditorForm({ post, clients, onReload }: EditorFormProps) {
         </fieldset>
 
         <label className="block">
-          <span className="flex items-baseline justify-between text-sm font-medium text-slate-700">
+          <span className="flex items-baseline justify-between text-sm font-medium text-stone-700">
             Caption
             <span
               data-testid="caption-counter"
               className={`text-xs tabular-nums ${
-                overLimit ? 'font-semibold text-red-600' : nearLimit ? 'text-amber-600' : 'text-slate-500'
+                overLimit ? 'font-semibold text-red-600' : nearLimit ? 'text-amber-600' : 'text-stone-500'
               }`}
             >
               {length.toLocaleString()} / {limit.toLocaleString()}
@@ -229,7 +231,7 @@ function EditorForm({ post, clients, onReload }: EditorFormProps) {
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
-              overLimit ? 'border-red-400 focus:outline-red-500' : 'border-slate-300'
+              overLimit ? 'border-red-400 focus:outline-red-500' : 'border-stone-300'
             }`}
             placeholder="Write the post…"
           />
@@ -242,16 +244,16 @@ function EditorForm({ post, clients, onReload }: EditorFormProps) {
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Scheduled time (IST)</span>
+          <span className="text-sm font-medium text-stone-700">Scheduled time (IST)</span>
           <input
             type="datetime-local"
             required
             min={nowIstInput()}
             value={scheduledLocal}
             onChange={(e) => setScheduledLocal(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
           />
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-stone-500">
             Posts for the same client and platform must be at least 2 hours apart.
           </span>
         </label>
@@ -262,13 +264,13 @@ function EditorForm({ post, clients, onReload }: EditorFormProps) {
           <button
             type="submit"
             disabled={!canSave}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {save.isPending ? 'Saving…' : post ? 'Save changes' : 'Create draft'}
           </button>
           <Link
             to={post ? `/posts/${post.id}` : '/'}
-            className="text-sm text-slate-600 hover:underline"
+            className="text-sm text-stone-600 hover:underline"
           >
             Cancel
           </Link>

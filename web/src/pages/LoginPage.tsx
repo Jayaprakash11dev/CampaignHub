@@ -12,7 +12,7 @@ const DEMO_ACCOUNTS = [
 const DEMO_PASSWORD = 'Password@123'
 
 const inputClass =
-  'mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none'
+  'mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none'
 
 export function LoginPage() {
   const { user, login } = useAuth()
@@ -57,12 +57,12 @@ export function LoginPage() {
         <div className="mb-6 text-center">
           <img src="/favicon.svg" alt="" className="mx-auto h-10 w-10" />
           <h1 className="mt-3 text-2xl font-semibold">CampaignHub</h1>
-          <p className="text-sm text-slate-500">Social media content approvals</p>
+          <p className="text-sm text-stone-500">Social media content approvals</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-4 rounded-xl border border-stone-200 bg-white p-6 shadow-sm"
         >
           {searchParams.get('expired') && !error && (
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -76,7 +76,7 @@ export function LoginPage() {
           )}
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Email</span>
+            <span className="text-sm font-medium text-stone-700">Email</span>
             <input
               type="email"
               required
@@ -88,7 +88,7 @@ export function LoginPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Password</span>
+            <span className="text-sm font-medium text-stone-700">Password</span>
             <input
               type="password"
               required
@@ -102,19 +102,19 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? 'Logging in…' : 'Log in'}
           </button>
           {slow && (
-            <p role="status" className="text-center text-xs text-slate-500">
+            <p role="status" className="text-center text-xs text-stone-500">
               The server is waking up (free hosting sleeps when idle). This can take up to a minute…
             </p>
           )}
         </form>
 
         <div className="mt-4 text-center">
-          <p className="text-xs text-slate-500">Demo accounts (password {DEMO_PASSWORD})</p>
+          <p className="text-xs text-stone-500">Demo accounts (password {DEMO_PASSWORD})</p>
           <div className="mt-2 flex justify-center gap-2">
             {DEMO_ACCOUNTS.map((account) => (
               <button
@@ -125,7 +125,7 @@ export function LoginPage() {
                   setPassword(DEMO_PASSWORD)
                   setError(null)
                 }}
-                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                className="rounded-full border border-stone-300 bg-white px-3 py-1 text-xs text-stone-700 hover:bg-stone-100"
               >
                 {account.label}
               </button>
